@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("customer")
+  createdAt DateTime @default(now()) @map("created_at")
+  orders    Order[]
+
+  @@map("Users")
+}
+
+model FoodItem {
+  id          Int         @id @default(autoincrement())
+  foodName    String      @map("food_name")
+  description String?
+  category    String
+  price       Decimal     @db.Decimal(10, 2)
+  imageUrl    String?     @map("image_url")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  orderItems  OrderItem[]
+
+  @@index([category], map: "idx_category")
+  @@index([foodName], map: "idx_food_name")
+  @@index([price], map: "idx_price")
+  @@map("FoodItems")
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  customerName    String      @map("customer_name") @db.VarChar(255)
+  customerEmail   String      @map("customer_email") @db.VarChar(255)
+  customerPhone   String      @map("customer_phone") @db.VarChar(50)
+  deliveryAddress String      @map("delivery_address")
+  deliveryCity    String?     @map("delivery_city") @db.VarChar(100)
+  deliveryZip     String?     @map("delivery_zip") @db.VarChar(20)
+  totalPrice      Decimal     @map("total_price") @db.Decimal(10, 2)
+  status          String?     @default("pending") @db.VarChar(50)
+  createdAt       DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
+  userId          Int?        @map("user_id")
+  items           OrderItem[]
+  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([customerEmail], map: "idx_orders_customer_email")
+  @@map("Orders")
+}
+
+model OrderItem {
+  id         Int       @id @default(autoincrement())
+  orderId    Int?      @map("order_id")
+  foodItemId Int?      @map("food_item_id")
+  quantity   Int
+  price      Decimal   @db.Decimal(10, 2)
+  foodItem   FoodItem? @relation(fields: [foodItemId], references: [id], onUpdate: NoAction)
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([orderId], map: "idx_order_items_order_id")
+  @@map("OrderItems")
+}
